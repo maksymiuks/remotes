@@ -82,6 +82,7 @@ function(...) {
   #' @noRd
   NULL
   
+  #' @importFrom utils download.file
   
   bioconductor <- local({
   
@@ -121,8 +122,10 @@ function(...) {
       "4.0"  = package_version("3.12"),
       "4.1"  = package_version("3.14"),
       "4.2"  = package_version("3.16"),
-      "4.3"  = package_version("3.17"),
-      "4.4"  = package_version("3.18")
+      "4.3"  = package_version("3.18"),
+      "4.4"  = package_version("3.20")
+      # Do not include R 4.4 <-> Bioc 3.19, because R 4.4 will use
+      # Bioc 3.20 eventually.
     )
   
     # -------------------------------------------------------------------
@@ -307,7 +310,7 @@ function(...) {
     }
   
     .VERSION_SENTINEL <- local({
-      version <- package_version(list())
+      version <- package_version(character())
       class(version) <- c("unknown_version", class(version))
       version
     })
@@ -587,6 +590,8 @@ function(...) {
   #' @param type Type of package to `update`.
   #' @param remote_precedence A logical flag specifying whether remote sources should take precedence over
   #'   CRAN when both were found.
+  #' @param additional_repositories A logical flag specifying whether `Additional_repositories` should
+  #'   be extracted from the DESCRIPTION and appended to `repos`.
   #' @param object A `package_deps` object.
   #' @param ... Additional arguments passed to `install_packages`.
   #' @inheritParams install_github
@@ -677,10 +682,11 @@ function(...) {
   dev_package_deps <- function(pkgdir = ".", dependencies = NA,
                                repos = getOption("repos"),
                                type = getOption("pkgType"),
-                               remote_precedence = TRUE) {
+                               remote_precedence = TRUE,
+                               additional_repositories = TRUE) {
   
     pkg <- load_pkg_description(pkgdir)
-    repos <- c(repos, parse_additional_repositories(pkg))
+    repos <- c(repos, if (additional_repositories) parse_additional_repositories(pkg))
   
     deps <- local_package_deps(pkgdir = pkgdir, dependencies = dependencies)
   
@@ -1628,6 +1634,8 @@ function(...) {
   }
   # Contents of R/git-auth.R
   
+  # nocov start
+  
   gitcreds_get <- NULL
   gitcreds_set <- NULL
   gitcreds_delete <- NULL
@@ -2094,7 +2102,8 @@ function(...) {
     c(
       GCM_INTERACTIVE = "Never",
       GCM_MODAL_PROMPT = "false",
-      GCM_VALIDATE = "false"
+      GCM_VALIDATE = "false",
+      GCM_GUI_PROMPT = "false"
     )
   }
   
@@ -2441,6 +2450,8 @@ function(...) {
   
   environment()
   })
+  
+  # nocov end
   # Contents of R/git.R
   
   # Extract the commit hash from a git archive. Git archives include the SHA1
@@ -3013,6 +3024,7 @@ function(...) {
     }, error = function(e) NA_character_)
   }
   
+  #' @export
   remote_sha.bioc_xgit_remote <- function(remote, ...) {
     url <- paste0(remote$mirror, "/", remote$repo)
     ref <- remote$branch
@@ -4016,7 +4028,7 @@ function(...) {
     # Otherwise lookup the package name from the remote DESCRIPTION file
     desc <- github_DESCRIPTION(username = remote$username, repo = remote$repo,
       subdir = remote$subdir, host = remote$host, ref = remote$ref,
-      pat = remote$auth_token %||% github_pat(), use_curl = use_curl)
+      pat = remote$auth_token, use_curl = use_curl)
   
     if (is.null(desc)) {
       return(NA_character_)
@@ -4033,7 +4045,7 @@ function(...) {
   remote_sha.github_remote <- function(remote, ..., use_curl = !is_standalone() && pkg_installed("curl")) {
     tryCatch(
       github_commit(username = remote$username, repo = remote$repo,
-        host = remote$host, ref = remote$ref, pat = remote$auth_token %||% github_pat(), use_curl = use_curl),
+        host = remote$host, ref = remote$ref, pat = remote$auth_token, use_curl = use_curl),
   
       # 422 errors most often occur when a branch or PR has been deleted, so we
       # ignore the error in this case
@@ -4058,7 +4070,7 @@ function(...) {
   #'   `username/repo[@@ref]`.
   #' @param host GitLab API host to use. Override with your GitLab enterprise
   #'   hostname, for example, `"<PROTOCOL://>gitlab.hostname.com"`.
-  #'   The PROTOCOL is required by packrat during RStudio Connect deployment. While
+  #'   The PROTOCOL is required by packrat during Posit Connect deployment. While
   #'   \link{install_gitlab} may work without, omitting it generally
   #'   leads to package restoration errors.
   #' @param auth_token To install from a private repo, generate a personal access
@@ -4528,7 +4540,10 @@ function(...) {
   #' @export
   remote_sha <- function(remote, ...) UseMethod("remote_sha")
   
+  #' @export
   remote_package_name.default <- function(remote, ...) remote$repo
+  
+  #' @export
   remote_sha.default <- function(remote, ...) NA_character_
   
   different_sha <- function(remote_sha, local_sha) {
@@ -4560,7 +4575,7 @@ function(...) {
           sha = NA_character_))
     }
   
-    if (is.null(x$RemoteType) || x$RemoteType == "cran") {
+    if (is.null(x$RemoteType) || x$RemoteType %in% c("cran", "standard", "any")) {
   
       # Packages installed with install.packages() or locally without remotes
       return(remote("cran",
@@ -4594,6 +4609,12 @@ function(...) {
         sha = x$RemoteSha,
         auth_token = gitlab_pat()),
       xgit = remote("xgit",
+        url = trim_ws(x$RemoteUrl),
+        ref = x$RemoteRef %||% x$RemoteBranch,
+        sha = x$RemoteSha,
+        subdir = x$RemoteSubdir,
+        args = x$RemoteArgs),
+      git = remote("xgit",
         url = trim_ws(x$RemoteUrl),
         ref = x$RemoteRef %||% x$RemoteBranch,
         sha = x$RemoteSha,
@@ -6025,7 +6046,7 @@ function(...) {
   supported_os_versions <- function() {
     list(
       #"debian" = c("8", "9"),
-      "ubuntu" = c("14.04", "16.04", "18.04", "20.04", "22.04"),
+      "ubuntu" = c("14.04", "16.04", "18.04", "20.04", "22.04", "24.04"),
       "centos" = c("6", "7", "8"),
       "redhat" = c("6", "7", "8"),
       "opensuse" = c("42.3", "15.0"),

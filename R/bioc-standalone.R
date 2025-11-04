@@ -74,6 +74,7 @@
 #' @noRd
 NULL
 
+#' @importFrom utils download.file
 
 bioconductor <- local({
 
@@ -113,8 +114,10 @@ bioconductor <- local({
     "4.0"  = package_version("3.12"),
     "4.1"  = package_version("3.14"),
     "4.2"  = package_version("3.16"),
-    "4.3"  = package_version("3.17"),
-    "4.4"  = package_version("3.18")
+    "4.3"  = package_version("3.18"),
+    "4.4"  = package_version("3.20")
+    # Do not include R 4.4 <-> Bioc 3.19, because R 4.4 will use
+    # Bioc 3.20 eventually.
   )
 
   # -------------------------------------------------------------------
@@ -299,7 +302,7 @@ bioconductor <- local({
   }
 
   .VERSION_SENTINEL <- local({
-    version <- package_version(list())
+    version <- package_version(character())
     class(version) <- c("unknown_version", class(version))
     version
   })

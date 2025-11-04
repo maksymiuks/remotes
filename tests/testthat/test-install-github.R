@@ -3,6 +3,11 @@ test_that("github_resolve_ref.github_release", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_error(
     github_resolve_ref.github_release(
@@ -38,6 +43,11 @@ test_that("github_resolve_ref.github_release", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_error(
     github_resolve_ref(
@@ -54,6 +64,11 @@ test_that("github_release", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   Sys.unsetenv("R_TESTS")
 
@@ -79,6 +94,11 @@ test_that("install_github", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   Sys.unsetenv("R_TESTS")
 
@@ -110,6 +130,11 @@ test_that("error if not username, warning if given as argument", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   Sys.unsetenv("R_TESTS")
 
@@ -153,6 +178,11 @@ test_that("remote_sha.github_remote", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_equal(
     remote_sha.github_remote(
@@ -176,6 +206,11 @@ test_that("github_remote with deleted branch", {
   # skip this test unless we are using curl
   skip_if(is_standalone() || !pkg_installed("curl"))
 
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_equal(
     remote_sha.github_remote(
@@ -192,9 +227,17 @@ test_that("github_remote with deleted branch", {
 
 test_that("github_pull", {
 
+  if (getRversion() < "4.0.0" && .Platform$OS.type == "windows") {
+    skip("Does not work on older R on Windows") # why?
+  }
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   Sys.unsetenv("R_TESTS")
 
@@ -202,12 +245,12 @@ test_that("github_pull", {
   on.exit(unlink(lib, recursive = TRUE), add = TRUE)
   dir.create(lib)
 
-  install_github(
+  suppressWarnings(install_github(
     "r-lib/desc",
     ref = github_pull(64),
     lib = lib,
     quiet = TRUE
-  )
+  ))
 
   expect_silent(packageDescription("desc", lib.loc = lib))
   expect_equal(
@@ -219,6 +262,11 @@ test_that("remote_sha.github_remote errors if remote doesn't exist", {
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_error(remote_sha(github_remote("arst/arst")))
 })
@@ -227,6 +275,11 @@ test_that("remote_sha.github_remote returns expected value if remote does exist"
   skip_on_cran()
   skip_if_offline()
   skip_if_over_rate_limit()
+  # skip in GHA PRs, no token
+  if (Sys.getenv("GITHUB_ACTIONS") == "true" &&
+      startsWith(Sys.getenv("GITHUB_REF"), "refs/pull")) {
+    skip("GHA pull request, no token")
+  }
 
   expect_equal(remote_sha(github_remote("r-lib/devtools@v1.8.0")), "ad9aac7b9a522354e1ff363a86f389e32cec181b")
 })

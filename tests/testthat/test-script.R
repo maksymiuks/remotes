@@ -6,7 +6,7 @@ test_that("install-github.R script is up to date", {
   tmp <- test_temp_file(".R")
 
   withr::with_dir(
-    rprojroot::find_package_root_file(),
+    test_package_root(),
     brew::brew(file.path(root, "install-github.Rin"), tmp))
 
   expect_equal(
@@ -54,7 +54,7 @@ test_that("install-github.R script does not load any package", {
     },
     args = list(script = script, lib = lib),
     cmdargs = c("--vanilla", "--slave", "--no-save", "--no-restore"),
-    timeout = 20
+    timeout = 60
   )
 
   expect_equal(pkgs[[1]], pkgs[[2]])

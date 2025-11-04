@@ -182,7 +182,10 @@ remote_package_name <- function(remote, ...) UseMethod("remote_package_name")
 #' @export
 remote_sha <- function(remote, ...) UseMethod("remote_sha")
 
+#' @export
 remote_package_name.default <- function(remote, ...) remote$repo
+
+#' @export
 remote_sha.default <- function(remote, ...) NA_character_
 
 different_sha <- function(remote_sha, local_sha) {
@@ -214,7 +217,7 @@ package2remote <- function(name, lib = .libPaths(), repos = getOption("repos"), 
         sha = NA_character_))
   }
 
-  if (is.null(x$RemoteType) || x$RemoteType == "cran") {
+  if (is.null(x$RemoteType) || x$RemoteType %in% c("cran", "standard", "any")) {
 
     # Packages installed with install.packages() or locally without remotes
     return(remote("cran",
@@ -248,6 +251,12 @@ package2remote <- function(name, lib = .libPaths(), repos = getOption("repos"), 
       sha = x$RemoteSha,
       auth_token = gitlab_pat()),
     xgit = remote("xgit",
+      url = trim_ws(x$RemoteUrl),
+      ref = x$RemoteRef %||% x$RemoteBranch,
+      sha = x$RemoteSha,
+      subdir = x$RemoteSubdir,
+      args = x$RemoteArgs),
+    git = remote("xgit",
       url = trim_ws(x$RemoteUrl),
       ref = x$RemoteRef %||% x$RemoteBranch,
       sha = x$RemoteSha,
